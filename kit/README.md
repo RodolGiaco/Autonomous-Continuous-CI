@@ -93,12 +93,13 @@ JSON takes no comments, so the justification lives here.
 - `Read(.env)` and `Edit(.env)` — a Read deny already blocks Edit and Write on
   the same path but not NotebookEdit, so both are listed.
 
-The allow rules let a headless session write only under `src/` and `docs/`:
-the code, and the documentation that has to change with it. Everything else,
+The allow rules let a headless session write only under `src/`, `docs/` and
+`openspec/`: the code, and the documentation and the spec record that have to
+change with it. Everything else,
 the kit and the workflows included, is outside its reach, and `Edit(/kit/**)`,
 `Edit(/.github/**)` and `Edit(/CLAUDE.md)` ask, which a headless run turns
 into a refusal. `doctor.sh` fails when an allowed path does not exist, so a
-repository without `docs/` creates it or removes those two rules.
+repository without `docs/` or `openspec/` creates it or removes those rules.
 
 Deliberately absent: rules against `git push --force` and against
 `gh pr merge` without `--auto`. Written as deny rules they would be theatre:
