@@ -17,6 +17,7 @@
     ],
     "allow": [
       "Bash",
+      "Skill",
       "Edit(/src/**)",
       "Write(/src/**)",
       "Edit(/docs/**)",

@@ -207,6 +207,11 @@ fi
   --permission-mode dontAsk \
   --output-format json > "$RESULT"
 
+# The result is kept: it is the only record of what a session was refused and
+# what it cost, and .claude/logs is ignored by git.
+mkdir -p .claude/logs
+cp "$RESULT" ".claude/logs/session-${ISSUE_NUMBER}-$(date +%Y%m%dT%H%M%S).json"
+
 # is_error is false when a permission denial stops a command, so the exit code
 # and that field both lie. The denial list is the evidence.
 DENIALS=$(jq -r '.permission_denials | length' < "$RESULT" 2>/dev/null || echo "unknown")
@@ -214,7 +219,7 @@ COST=$(jq -r '.total_cost_usd // 0' < "$RESULT" 2>/dev/null || echo 0)
 printf 'cost: %s USD   denials: %s\n' "$COST" "$DENIALS"
 
 if [ "$DENIALS" != "0" ]; then
-  jq -r '.permission_denials[] | "  denied: " + (.tool_input.command // .tool_name)' < "$RESULT"
+  jq -r '.permission_denials[] | "  denied: \(.tool_name) \(.tool_input | .command // .file_path // .skill // (tostring | .[0:160]))"' < "$RESULT"
   die "the session was blocked; the branch is left in place for inspection"
 fi
 
