@@ -7,6 +7,7 @@ import io.github.rodolgiaco.oms.order.application.OrderService;
 import io.github.rodolgiaco.oms.order.application.port.in.CancelOrderUseCase;
 import io.github.rodolgiaco.oms.order.application.port.in.CreateOrderUseCase;
 import io.github.rodolgiaco.oms.order.application.port.in.GetOrderUseCase;
+import io.github.rodolgiaco.oms.order.application.port.in.ListOrdersUseCase;
 import io.github.rodolgiaco.oms.order.application.port.out.OrderRepository;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
@@ -28,7 +29,11 @@ class OrderLayerDependencyTest {
   @Test
   void theControllerHoldsOnlyTheUseCases() {
     assertEquals(
-        Set.of(CreateOrderUseCase.class, GetOrderUseCase.class, CancelOrderUseCase.class),
+        Set.of(
+            CreateOrderUseCase.class,
+            GetOrderUseCase.class,
+            ListOrdersUseCase.class,
+            CancelOrderUseCase.class),
         collaboratorsOf(OrderController.class));
   }
 

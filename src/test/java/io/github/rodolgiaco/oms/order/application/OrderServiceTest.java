@@ -42,6 +42,11 @@ class OrderServiceTest {
     public Optional<Order> findById(UUID id) {
       return Optional.ofNullable(orders.get(id));
     }
+
+    @Override
+    public List<Order> findAll() {
+      return List.copyOf(orders.values());
+    }
   }
 
   private final InMemoryOrderRepository repository = new InMemoryOrderRepository();
@@ -85,6 +90,26 @@ class OrderServiceTest {
         assertThrows(OrderNotFoundException.class, () -> service.getOrder(unknown));
 
     assertEquals(unknown, thrown.orderId());
+  }
+
+  @Test
+  void listsEveryStoredOrder() {
+    Order created = Order.create(List.of(new OrderItem("BOOK", 2, new BigDecimal("12.50"))));
+    Order cancelled =
+        Order.create(List.of(new OrderItem("PEN", 3, new BigDecimal("1.20")))).cancel();
+    repository.save(created);
+    repository.save(cancelled);
+
+    List<Order> listed = service.listOrders();
+
+    assertEquals(2, listed.size());
+    assertTrue(listed.contains(created));
+    assertTrue(listed.contains(cancelled));
+  }
+
+  @Test
+  void listingWithNoStoredOrderReturnsAnEmptyList() {
+    assertTrue(service.listOrders().isEmpty());
   }
 
   @Test

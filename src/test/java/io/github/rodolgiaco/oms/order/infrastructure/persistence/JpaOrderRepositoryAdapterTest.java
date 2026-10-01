@@ -10,6 +10,7 @@ import io.github.rodolgiaco.oms.order.domain.OrderItem;
 import io.github.rodolgiaco.oms.order.domain.OrderStatus;
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -125,5 +126,29 @@ class JpaOrderRepositoryAdapterTest {
   @Test
   void findsNothingForAnUnknownIdentifier() {
     assertTrue(repository.findById(UUID.randomUUID()).isEmpty());
+  }
+
+  // Other tests share the database, so the result holds their orders too: the
+  // identifiers are compared with the table, and the orders saved here one by
+  // one.
+  @Test
+  void findAllReturnsEveryStoredOrderOnceWithItsItemsInOrder() {
+    Order created = Order.create(List.of(DESK, BOOK, CHIP));
+    Order cancelled = Order.create(List.of(PEN, BOOK)).cancel();
+    repository.save(created);
+    repository.save(cancelled);
+
+    List<Order> found = repository.findAll();
+
+    List<UUID> ids = found.stream().map(Order::id).toList();
+    assertEquals(ids.size(), Set.copyOf(ids).size());
+    assertEquals(
+        Set.copyOf(jdbc.queryForList("SELECT id FROM orders", UUID.class)), Set.copyOf(ids));
+    for (Order saved : List.of(created, cancelled)) {
+      Order match =
+          found.stream().filter(order -> order.id().equals(saved.id())).findFirst().orElseThrow();
+      assertEquals(saved.status(), match.status());
+      assertEquals(saved.items(), match.items());
+    }
   }
 }

@@ -20,6 +20,7 @@ import io.github.rodolgiaco.oms.order.application.port.in.CancelOrderUseCase;
 import io.github.rodolgiaco.oms.order.application.port.in.CreateOrderCommand;
 import io.github.rodolgiaco.oms.order.application.port.in.CreateOrderUseCase;
 import io.github.rodolgiaco.oms.order.application.port.in.GetOrderUseCase;
+import io.github.rodolgiaco.oms.order.application.port.in.ListOrdersUseCase;
 import io.github.rodolgiaco.oms.order.domain.Order;
 import io.github.rodolgiaco.oms.order.domain.OrderItem;
 import io.github.rodolgiaco.oms.order.domain.OrderStatus;
@@ -33,6 +34,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.test.json.JsonCompareMode;
 import org.springframework.test.web.servlet.MockMvc;
 
 @WebMvcTest(OrderController.class)
@@ -59,6 +61,8 @@ class OrderControllerTest {
   @MockitoBean private CreateOrderUseCase createOrder;
 
   @MockitoBean private GetOrderUseCase getOrder;
+
+  @MockitoBean private ListOrdersUseCase listOrders;
 
   @MockitoBean private CancelOrderUseCase cancelOrder;
 
@@ -138,6 +142,43 @@ class OrderControllerTest {
         .andExpect(jsonPath("$.status").value(400));
 
     verifyNoInteractions(getOrder);
+  }
+
+  @Test
+  void listingTheOrdersReturns200WithEveryOrder() throws Exception {
+    Order cancelled =
+        Order.create(List.of(new OrderItem("DESK", 1, new BigDecimal("300")))).cancel();
+    when(listOrders.listOrders()).thenReturn(List.of(ORDER, cancelled));
+
+    mockMvc
+        .perform(get("/api/orders"))
+        .andExpect(status().isOk())
+        .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
+        .andExpect(jsonPath("$.length()").value(2))
+        .andExpect(jsonPath("$[0].orderId").value(ORDER.id().toString()))
+        .andExpect(jsonPath("$[0].status").value("CREATED"))
+        .andExpect(jsonPath("$[0].items.length()").value(2))
+        .andExpect(jsonPath("$[0].items[0].productId").value("BOOK"))
+        .andExpect(jsonPath("$[0].items[1].productId").value("PEN"))
+        .andExpect(jsonPath("$[0].items[1].quantity").value(3))
+        .andExpect(jsonPath("$[0].items[1].unitPrice").value(1.20))
+        .andExpect(jsonPath("$[0].totalAmount").value(28.60))
+        .andExpect(jsonPath("$[1].orderId").value(cancelled.id().toString()))
+        .andExpect(jsonPath("$[1].status").value("CANCELLED"))
+        .andExpect(jsonPath("$[1].items.length()").value(1))
+        .andExpect(jsonPath("$[1].items[0].productId").value("DESK"))
+        .andExpect(jsonPath("$[1].totalAmount").value(300));
+  }
+
+  @Test
+  void listingWithNoOrdersReturns200WithAnEmptyArray() throws Exception {
+    when(listOrders.listOrders()).thenReturn(List.of());
+
+    mockMvc
+        .perform(get("/api/orders"))
+        .andExpect(status().isOk())
+        .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
+        .andExpect(content().json("[]", JsonCompareMode.STRICT));
   }
 
   @ParameterizedTest
