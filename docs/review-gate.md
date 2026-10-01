@@ -28,7 +28,7 @@ Runs on every pull request against the protected branch.
 3. **Install the kit** with `bash kit/install.sh`. This proves the installer works and generates the hooks, which are not versioned.
 4. **Run the guard battery** with `bash kit/test-guards.sh`.
 5. **Check consistency** with `bash kit/doctor.sh`, with no fallback: a drift between `kit/` and an installed copy blocks the merge.
-6. **Run the format check and the tests** from `KIT_FORMAT_CHECK_CMD` and `KIT_TEST_CMD`, each skipped when empty.
+6. **Run the format check, the spec check and the tests** from `KIT_FORMAT_CHECK_CMD`, `KIT_SPEC_CHECK_CMD` and `KIT_TEST_CMD`, each skipped when empty.
 
 ## claude-review
 

@@ -290,6 +290,7 @@ El cuerpo del issue es la especificación. Cada criterio de aceptación debe pod
 | | `KIT_JAVA_VERSION` | JDK que instala CI |
 | | `KIT_FORMAT_CHECK_CMD` | Chequeo de formato que ejecuta CI |
 | | `KIT_TEST_CMD` | Tests que ejecutan CI y el auditor de aceptación |
+| | `KIT_SPEC_CHECK_CMD` | Chequeo opcional del registro de specs, antes de los tests |
 | Secret del repositorio | `CLAUDE_CODE_OAUTH_TOKEN` | Autentica el workflow de revisión |
 | `.env.local` | `USE_OPENROUTER` | `true` hace pasar la sesión headless por OpenRouter, configurado en `~/.config/claude-code/openrouter.env` |
 

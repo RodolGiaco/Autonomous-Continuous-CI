@@ -290,6 +290,7 @@ The issue body is the specification. Write each acceptance criterion so that a c
 | | `KIT_JAVA_VERSION` | JDK that CI sets up |
 | | `KIT_FORMAT_CHECK_CMD` | Format check that CI runs |
 | | `KIT_TEST_CMD` | Tests that CI and the acceptance auditor run |
+| | `KIT_SPEC_CHECK_CMD` | Optional check of the spec record, run before the tests |
 | Repository secret | `CLAUDE_CODE_OAUTH_TOKEN` | Authenticates the review workflow |
 | `.env.local` | `USE_OPENROUTER` | `true` routes the headless session through OpenRouter, configured in `~/.config/claude-code/openrouter.env` |
 

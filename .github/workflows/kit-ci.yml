@@ -22,6 +22,7 @@ jobs:
           set -a; . .claude/kit.vars; set +a
           echo "java=${KIT_JAVA_VERSION:-}" >> "$GITHUB_OUTPUT"
           echo "format=${KIT_FORMAT_CHECK_CMD:-}" >> "$GITHUB_OUTPUT"
+          echo "spec=${KIT_SPEC_CHECK_CMD:-}" >> "$GITHUB_OUTPUT"
           echo "test=${KIT_TEST_CMD:-}" >> "$GITHUB_OUTPUT"
 
       - name: Set up the JDK
@@ -58,6 +59,14 @@ jobs:
         if: steps.vars.outputs.format != ''
         env:
           CMD: ${{ steps.vars.outputs.format }}
+        run: |
+          echo "running: $CMD"
+          eval "$CMD"
+
+      - name: Spec check
+        if: steps.vars.outputs.spec != ''
+        env:
+          CMD: ${{ steps.vars.outputs.spec }}
         run: |
           echo "running: $CMD"
           eval "$CMD"
