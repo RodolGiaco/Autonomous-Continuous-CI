@@ -236,7 +236,7 @@ fi
 # The same commands CI runs. A red result here stops the run before the push
 # pays for two review sessions on code that cannot merge.
 step "Local checks"
-for var in KIT_FORMAT_CHECK_CMD KIT_TEST_CMD; do
+for var in KIT_FORMAT_CHECK_CMD KIT_SPEC_CHECK_CMD KIT_TEST_CMD; do
   cmd="${!var:-}"
   [ -n "$cmd" ] || continue
   echo "running: $cmd"

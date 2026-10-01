@@ -31,3 +31,8 @@ KIT_MAINTENANCE_BRANCH_PREFIX=kit/
 KIT_JAVA_VERSION=
 KIT_FORMAT_CHECK_CMD=
 KIT_TEST_CMD=
+
+# Optional check of the project's spec record, such as an OpenSpec repository.
+# Empty means skipped. It runs before the tests, on this machine and in CI.
+#          KIT_SPEC_CHECK_CMD="bash scripts/spec-check.sh"
+KIT_SPEC_CHECK_CMD=
