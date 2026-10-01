@@ -10,6 +10,10 @@ import java.util.UUID;
  *
  * <p>An order always has an identifier, a status, and at least one {@link OrderItem}. Its items
  * cannot change once it is created.
+ *
+ * <p>An order starts in {@link OrderStatus#CREATED}, and can be cancelled only from there. An order
+ * never changes in place: {@link #cancel()} returns the cancelled order and leaves this one as it
+ * was.
  */
 public final class Order {
 
@@ -71,6 +75,24 @@ public final class Order {
       throw new IllegalArgumentException("an order must not contain a null item");
     }
     return List.copyOf(items);
+  }
+
+  /**
+   * Cancels this order.
+   *
+   * <p>Only an order in {@link OrderStatus#CREATED} can be cancelled. The check names the one
+   * status that allows it, so a status added later is refused until it is allowed here too.
+   *
+   * @return a new order with the same identifier and items, in status {@link
+   *     OrderStatus#CANCELLED}; this order is left unchanged
+   * @throws IllegalStateException if this order is not in {@link OrderStatus#CREATED}
+   */
+  public Order cancel() {
+    if (status != OrderStatus.CREATED) {
+      throw new IllegalStateException(
+          "the order " + id + " is " + status + " and cannot be cancelled");
+    }
+    return new Order(id, items, OrderStatus.CANCELLED);
   }
 
   /**

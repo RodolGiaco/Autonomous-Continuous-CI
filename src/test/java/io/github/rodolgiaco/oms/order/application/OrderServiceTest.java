@@ -88,6 +88,47 @@ class OrderServiceTest {
   }
 
   @Test
+  void cancelsACreatedOrderAndStoresTheCancelledOrder() {
+    Order order = Order.create(List.of(new OrderItem("BOOK", 2, new BigDecimal("12.50"))));
+    repository.save(order);
+
+    Order cancelled = service.cancelOrder(order.id());
+
+    assertEquals(OrderStatus.CANCELLED, cancelled.status());
+    assertEquals(order.id(), cancelled.id());
+    assertEquals(order.items(), cancelled.items());
+    assertSame(cancelled, repository.findById(order.id()).orElseThrow());
+  }
+
+  @Test
+  void cancellingAnUnknownOrderThrowsOrderNotFound() {
+    UUID unknown = UUID.randomUUID();
+
+    OrderNotFoundException thrown =
+        assertThrows(OrderNotFoundException.class, () -> service.cancelOrder(unknown));
+
+    assertEquals(unknown, thrown.orderId());
+    assertTrue(repository.orders.isEmpty());
+  }
+
+  @Test
+  void cancellingACancelledOrderThrowsOrderNotCancellableAndKeepsTheStoredOrder() {
+    Order order =
+        Order.reconstitute(
+            UUID.randomUUID(),
+            List.of(new OrderItem("BOOK", 2, new BigDecimal("12.50"))),
+            OrderStatus.CANCELLED);
+    repository.save(order);
+
+    OrderNotCancellableException thrown =
+        assertThrows(OrderNotCancellableException.class, () -> service.cancelOrder(order.id()));
+
+    assertEquals(order.id(), thrown.orderId());
+    assertEquals(OrderStatus.CANCELLED, thrown.status());
+    assertSame(order, repository.findById(order.id()).orElseThrow());
+  }
+
+  @Test
   void refusesAnInvalidQuantityAndStoresNothing() {
     CreateOrderCommand command =
         new CreateOrderCommand(

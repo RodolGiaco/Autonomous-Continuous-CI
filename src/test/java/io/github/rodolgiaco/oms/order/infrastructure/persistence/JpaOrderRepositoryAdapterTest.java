@@ -102,6 +102,27 @@ class JpaOrderRepositoryAdapterTest {
   }
 
   @Test
+  void savingTheCancelledOrderReplacesTheStoredStatusAndKeepsTheItems() {
+    Order order = Order.create(List.of(BOOK, PEN));
+    repository.save(order);
+
+    repository.save(order.cancel());
+
+    assertEquals(
+        "CANCELLED",
+        jdbc.queryForObject("SELECT status FROM orders WHERE id = ?", String.class, order.id()));
+    assertEquals(
+        List.of("BOOK", "PEN"),
+        jdbc.queryForList(
+            "SELECT product_id FROM order_items WHERE order_id = ? ORDER BY line_number",
+            String.class,
+            order.id()));
+    Order found = repository.findById(order.id()).orElseThrow();
+    assertEquals(OrderStatus.CANCELLED, found.status());
+    assertEquals(List.of(BOOK, PEN), found.items());
+  }
+
+  @Test
   void findsNothingForAnUnknownIdentifier() {
     assertTrue(repository.findById(UUID.randomUUID()).isEmpty());
   }

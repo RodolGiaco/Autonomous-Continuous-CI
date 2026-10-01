@@ -58,9 +58,12 @@ Tests hold the boundaries in place. `OrderLayerDependencyTest` and `CatalogLayer
 | `GET` | `/api/products?page=&size=` | — | `200` with one page, ordered by SKU | `400` when `page` is below 0 or `size` is outside 1–100 |
 | `POST` | `/api/orders` | `items`, each with `productId`, `quantity`, `unitPrice` | `201` with the order and a `Location` header | `400` invalid body |
 | `GET` | `/api/orders/{orderId}` | — | `200` with the order | `400` malformed identifier, `404` unknown identifier |
+| `POST` | `/api/orders/{orderId}/cancel` | — | `200` with the order in `CANCELLED` | `400` malformed identifier, `404` unknown identifier, `409` order not in `CREATED` |
 | `GET` | `/actuator/health` | — | `200` with `status` `UP` | — |
 
 `page` defaults to 0 and `size` to 20.
+
+An order starts in `CREATED` and can be cancelled only from there. `CANCELLED` is final: cancelling the order again is refused with `409`, and the order stays as it is.
 
 The request records and the domain enforce the same rules:
 
@@ -158,6 +161,29 @@ Content-Type: application/json
 
 `totalAmount` is the sum of `quantity × unitPrice` over the items.
 
+### Cancel an order
+
+```bash
+curl -i -X POST http://localhost:8080/api/orders/fa8c6770-545f-4a6f-8f64-d14475fad4db/cancel
+```
+
+```http
+HTTP/1.1 200
+Content-Type: application/json
+
+{
+  "orderId": "fa8c6770-545f-4a6f-8f64-d14475fad4db",
+  "status": "CANCELLED",
+  "items": [
+    {"productId": "BOOK-001", "quantity": 2, "unitPrice": 54.90},
+    {"productId": "PEN-002", "quantity": 3, "unitPrice": 1.20}
+  ],
+  "totalAmount": 113.40
+}
+```
+
+The request has no body. The order keeps its identifier, items and total; only its status changes.
+
 ## Errors
 
 Every error is a `ProblemDetail` (RFC 9457) with `title`, `status`, `detail` and `instance`.
@@ -171,6 +197,7 @@ Every error is a `ProblemDetail` (RFC 9457) with `title`, `status`, `detail` and
 | An unknown order | `404` | `Order not found` |
 | An unknown product | `404` | `Product not found` |
 | A SKU that another product holds | `409` | `Duplicate SKU` |
+| A cancellation of an order that is not in `CREATED` | `409` | `Order cannot be cancelled` |
 
 A constraint violation lists each offending field:
 
@@ -220,7 +247,7 @@ The [README](../README.md#run-the-reference-application) has the steps to run th
 
 ## Tests
 
-`./mvnw verify` runs 177 tests. The ones that need a database start PostgreSQL 17 in a container through Testcontainers, so Docker is the only requirement.
+`./mvnw verify` runs 194 tests. The ones that need a database start PostgreSQL 17 in a container through Testcontainers, so Docker is the only requirement.
 
 | Layer | Tests |
 |---|---|

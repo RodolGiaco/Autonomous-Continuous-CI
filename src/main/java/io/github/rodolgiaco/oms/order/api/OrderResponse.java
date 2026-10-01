@@ -5,7 +5,8 @@ import java.util.List;
 import java.util.UUID;
 
 /**
- * Body returned for an order by {@code POST /api/orders} and {@code GET /api/orders/{orderId}}.
+ * Body returned for an order by {@code POST /api/orders}, {@code GET /api/orders/{orderId}} and
+ * {@code POST /api/orders/{orderId}/cancel}.
  *
  * @param orderId the identifier of the order
  * @param status the status of the order

@@ -4,6 +4,7 @@ import io.github.rodolgiaco.oms.catalog.application.DuplicateSkuException;
 import io.github.rodolgiaco.oms.catalog.application.InvalidProductException;
 import io.github.rodolgiaco.oms.catalog.application.ProductNotFoundException;
 import io.github.rodolgiaco.oms.order.application.InvalidOrderException;
+import io.github.rodolgiaco.oms.order.application.OrderNotCancellableException;
 import io.github.rodolgiaco.oms.order.application.OrderNotFoundException;
 import java.util.List;
 import org.springframework.http.HttpHeaders;
@@ -51,6 +52,13 @@ public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
     ProblemDetail problem =
         ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, e.getMessage());
     problem.setTitle("Invalid order");
+    return problem;
+  }
+
+  @ExceptionHandler(OrderNotCancellableException.class)
+  ProblemDetail handleOrderNotCancellable(OrderNotCancellableException e) {
+    ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, e.getMessage());
+    problem.setTitle("Order cannot be cancelled");
     return problem;
   }
 

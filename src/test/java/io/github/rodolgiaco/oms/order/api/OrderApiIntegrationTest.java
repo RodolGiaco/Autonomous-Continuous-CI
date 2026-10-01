@@ -3,6 +3,7 @@ package io.github.rodolgiaco.oms.order.api;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -105,5 +106,84 @@ class OrderApiIntegrationTest {
                     """))
         .andExpect(status().isBadRequest())
         .andExpect(jsonPath("$.status").value(400));
+  }
+
+  @Test
+  void cancellingACreatedOrderReturns200WithTheOrderCancelled() throws Exception {
+    UUID orderId = createOrder();
+
+    mockMvc
+        .perform(post("/api/orders/{orderId}/cancel", orderId))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.orderId").value(orderId.toString()))
+        .andExpect(jsonPath("$.status").value("CANCELLED"))
+        .andExpect(jsonPath("$.items.length()").value(2))
+        .andExpect(jsonPath("$.items[0].productId").value("BOOK"))
+        .andExpect(jsonPath("$.items[1].productId").value("PEN"))
+        .andExpect(jsonPath("$.totalAmount").value(28.60));
+  }
+
+  @Test
+  void aCancelledOrderIsReadBackAsCancelled() throws Exception {
+    UUID orderId = createOrder();
+    mockMvc.perform(post("/api/orders/{orderId}/cancel", orderId)).andExpect(status().isOk());
+
+    mockMvc
+        .perform(get("/api/orders/{orderId}", orderId))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.orderId").value(orderId.toString()))
+        .andExpect(jsonPath("$.status").value("CANCELLED"));
+    assertEquals(OrderStatus.CANCELLED, repository.findById(orderId).orElseThrow().status());
+  }
+
+  @Test
+  void cancellingAnAlreadyCancelledOrderReturns409AndKeepsItCancelled() throws Exception {
+    UUID orderId = createOrder();
+    mockMvc.perform(post("/api/orders/{orderId}/cancel", orderId)).andExpect(status().isOk());
+
+    mockMvc
+        .perform(post("/api/orders/{orderId}/cancel", orderId))
+        .andExpect(status().isConflict())
+        .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_PROBLEM_JSON))
+        .andExpect(jsonPath("$.status").value(409))
+        .andExpect(jsonPath("$.title").value("Order cannot be cancelled"));
+
+    mockMvc
+        .perform(get("/api/orders/{orderId}", orderId))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.status").value("CANCELLED"));
+  }
+
+  @Test
+  void cancellingAnUnknownOrderReturns404AsAProblemDetail() throws Exception {
+    mockMvc
+        .perform(post("/api/orders/{orderId}/cancel", UUID.randomUUID()))
+        .andExpect(status().isNotFound())
+        .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_PROBLEM_JSON))
+        .andExpect(jsonPath("$.status").value(404))
+        .andExpect(jsonPath("$.title").value("Order not found"));
+  }
+
+  // Creates an order through the API, as a client would, and returns its
+  // identifier. Its total is 2 * 12.50 + 3 * 1.20 = 28.60.
+  private UUID createOrder() throws Exception {
+    String created =
+        mockMvc
+            .perform(
+                post("/api/orders")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(
+                        """
+                        {"items": [
+                          {"productId": "BOOK", "quantity": 2, "unitPrice": 12.50},
+                          {"productId": "PEN", "quantity": 3, "unitPrice": 1.20}
+                        ]}
+                        """))
+            .andExpect(status().isCreated())
+            .andExpect(jsonPath("$.status").value("CREATED"))
+            .andReturn()
+            .getResponse()
+            .getContentAsString();
+    return UUID.fromString(JsonPath.read(created, "$.orderId"));
   }
 }

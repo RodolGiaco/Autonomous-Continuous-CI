@@ -11,6 +11,8 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 
 class OrderTest {
 
@@ -97,6 +99,13 @@ class OrderTest {
   }
 
   @Test
+  void reconstitutingKeepsACancelledStatus() {
+    Order order = Order.reconstitute(UUID.randomUUID(), List.of(BOOK), OrderStatus.CANCELLED);
+
+    assertEquals(OrderStatus.CANCELLED, order.status());
+  }
+
+  @Test
   void reconstitutingRejectsANullIdentifier() {
     assertThrows(
         IllegalArgumentException.class,
@@ -133,5 +142,37 @@ class OrderTest {
     items.add(PEN);
 
     assertEquals(List.of(BOOK), order.items());
+  }
+
+  @Test
+  void cancellingACreatedOrderReturnsItCancelledWithTheSameIdentifierItemsAndTotal() {
+    Order order = Order.create(List.of(BOOK, PEN));
+
+    Order cancelled = order.cancel();
+
+    assertEquals(OrderStatus.CANCELLED, cancelled.status());
+    assertEquals(order.id(), cancelled.id());
+    assertEquals(List.of(BOOK, PEN), cancelled.items());
+    assertEquals(new BigDecimal("28.60"), cancelled.total());
+  }
+
+  @Test
+  void cancellingLeavesTheOriginalOrderUnchanged() {
+    Order order = Order.create(List.of(BOOK));
+
+    order.cancel();
+
+    assertEquals(OrderStatus.CREATED, order.status());
+  }
+
+  // Every status but CREATED, so a status added later is covered without
+  // touching this test.
+  @ParameterizedTest
+  @EnumSource(value = OrderStatus.class, mode = EnumSource.Mode.EXCLUDE, names = "CREATED")
+  void cancellingIsRefusedFromAnyStatusOtherThanCreated(OrderStatus status) {
+    Order order = Order.reconstitute(UUID.randomUUID(), List.of(BOOK), status);
+
+    assertThrows(IllegalStateException.class, order::cancel);
+    assertEquals(status, order.status());
   }
 }
