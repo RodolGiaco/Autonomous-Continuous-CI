@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import io.github.rodolgiaco.oms.order.api.OrderController;
 import io.github.rodolgiaco.oms.order.application.OrderService;
+import io.github.rodolgiaco.oms.order.application.port.in.CancelOrderUseCase;
 import io.github.rodolgiaco.oms.order.application.port.in.CreateOrderUseCase;
 import io.github.rodolgiaco.oms.order.application.port.in.GetOrderUseCase;
 import io.github.rodolgiaco.oms.order.application.port.out.OrderRepository;
@@ -27,7 +28,7 @@ class OrderLayerDependencyTest {
   @Test
   void theControllerHoldsOnlyTheUseCases() {
     assertEquals(
-        Set.of(CreateOrderUseCase.class, GetOrderUseCase.class),
+        Set.of(CreateOrderUseCase.class, GetOrderUseCase.class, CancelOrderUseCase.class),
         collaboratorsOf(OrderController.class));
   }
 

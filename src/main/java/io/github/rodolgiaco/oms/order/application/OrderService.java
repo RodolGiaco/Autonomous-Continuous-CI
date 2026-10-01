@@ -1,5 +1,6 @@
 package io.github.rodolgiaco.oms.order.application;
 
+import io.github.rodolgiaco.oms.order.application.port.in.CancelOrderUseCase;
 import io.github.rodolgiaco.oms.order.application.port.in.CreateOrderCommand;
 import io.github.rodolgiaco.oms.order.application.port.in.CreateOrderUseCase;
 import io.github.rodolgiaco.oms.order.application.port.in.GetOrderUseCase;
@@ -18,7 +19,7 @@ import org.springframework.stereotype.Service;
  * injects through the constructor. The controller reaches it only through the use case interfaces.
  */
 @Service
-public class OrderService implements CreateOrderUseCase, GetOrderUseCase {
+public class OrderService implements CreateOrderUseCase, GetOrderUseCase, CancelOrderUseCase {
 
   private final OrderRepository orders;
 
@@ -46,6 +47,21 @@ public class OrderService implements CreateOrderUseCase, GetOrderUseCase {
   @Override
   public Order getOrder(UUID orderId) {
     return orders.findById(orderId).orElseThrow(() -> new OrderNotFoundException(orderId));
+  }
+
+  @Override
+  public Order cancelOrder(UUID orderId) {
+    Order order = getOrder(orderId);
+    // Only the transition is inside the try, so an IllegalStateException from
+    // anywhere else is not reported as an order that cannot be cancelled.
+    Order cancelled;
+    try {
+      cancelled = order.cancel();
+    } catch (IllegalStateException e) {
+      throw new OrderNotCancellableException(orderId, order.status(), e);
+    }
+    orders.save(cancelled);
+    return cancelled;
   }
 
   // A null list or a null line is passed on as such, so the aggregate is the

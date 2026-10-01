@@ -1,7 +1,9 @@
 package io.github.rodolgiaco.oms.order.api;
 
 import io.github.rodolgiaco.oms.order.application.InvalidOrderException;
+import io.github.rodolgiaco.oms.order.application.OrderNotCancellableException;
 import io.github.rodolgiaco.oms.order.application.OrderNotFoundException;
+import io.github.rodolgiaco.oms.order.application.port.in.CancelOrderUseCase;
 import io.github.rodolgiaco.oms.order.application.port.in.CreateOrderUseCase;
 import io.github.rodolgiaco.oms.order.application.port.in.GetOrderUseCase;
 import io.github.rodolgiaco.oms.order.domain.Order;
@@ -33,15 +35,20 @@ public class OrderController {
 
   private final GetOrderUseCase getOrder;
 
+  private final CancelOrderUseCase cancelOrder;
+
   /**
    * Creates the controller on top of the use cases it delegates to.
    *
    * @param createOrder the use case that creates orders
    * @param getOrder the use case that retrieves orders
+   * @param cancelOrder the use case that cancels orders
    */
-  public OrderController(CreateOrderUseCase createOrder, GetOrderUseCase getOrder) {
+  public OrderController(
+      CreateOrderUseCase createOrder, GetOrderUseCase getOrder, CancelOrderUseCase cancelOrder) {
     this.createOrder = createOrder;
     this.getOrder = getOrder;
+    this.cancelOrder = cancelOrder;
   }
 
   /**
@@ -72,5 +79,19 @@ public class OrderController {
   @GetMapping("/{orderId}")
   public OrderResponse get(@PathVariable UUID orderId) {
     return OrderApiMapper.toResponse(getOrder.getOrder(orderId));
+  }
+
+  /**
+   * Cancels an existing order.
+   *
+   * @param orderId the identifier of the order
+   * @return the cancelled order
+   * @throws OrderNotFoundException if no order has that identifier, answered with 404
+   * @throws OrderNotCancellableException if the order is not in a status that allows a
+   *     cancellation, answered with 409
+   */
+  @PostMapping("/{orderId}/cancel")
+  public OrderResponse cancel(@PathVariable UUID orderId) {
+    return OrderApiMapper.toResponse(cancelOrder.cancelOrder(orderId));
   }
 }

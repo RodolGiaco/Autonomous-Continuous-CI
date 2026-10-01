@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import io.github.rodolgiaco.oms.order.domain.Order;
 import io.github.rodolgiaco.oms.order.domain.OrderItem;
+import io.github.rodolgiaco.oms.order.domain.OrderStatus;
 import java.math.BigDecimal;
 import java.util.Arrays;
 import java.util.List;
@@ -27,6 +28,17 @@ class OrderEntityMapperTest {
     assertEquals(order.status(), mapped.status());
     assertEquals(order.items(), mapped.items());
     assertEquals(order.total(), mapped.total());
+  }
+
+  @Test
+  void aCancelledOrderSurvivesTheRoundTripThroughItsEntity() {
+    Order order = Order.create(List.of(BOOK, PEN)).cancel();
+
+    Order mapped = OrderEntityMapper.toDomain(OrderEntityMapper.toEntity(order));
+
+    assertEquals(order.id(), mapped.id());
+    assertEquals(OrderStatus.CANCELLED, mapped.status());
+    assertEquals(order.items(), mapped.items());
   }
 
   @Test

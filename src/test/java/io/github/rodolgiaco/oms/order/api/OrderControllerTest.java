@@ -14,7 +14,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import io.github.rodolgiaco.oms.order.application.InvalidOrderException;
+import io.github.rodolgiaco.oms.order.application.OrderNotCancellableException;
 import io.github.rodolgiaco.oms.order.application.OrderNotFoundException;
+import io.github.rodolgiaco.oms.order.application.port.in.CancelOrderUseCase;
 import io.github.rodolgiaco.oms.order.application.port.in.CreateOrderCommand;
 import io.github.rodolgiaco.oms.order.application.port.in.CreateOrderUseCase;
 import io.github.rodolgiaco.oms.order.application.port.in.GetOrderUseCase;
@@ -57,6 +59,8 @@ class OrderControllerTest {
   @MockitoBean private CreateOrderUseCase createOrder;
 
   @MockitoBean private GetOrderUseCase getOrder;
+
+  @MockitoBean private CancelOrderUseCase cancelOrder;
 
   @Test
   void creatingAValidOrderReturns201WithTheOrder() throws Exception {
@@ -224,5 +228,64 @@ class OrderControllerTest {
         .andExpect(jsonPath("$.status").value(400))
         .andExpect(jsonPath("$.title").value("Invalid order"))
         .andExpect(jsonPath("$.detail").value("refused"));
+  }
+
+  @Test
+  void cancellingAnOrderReturns200WithTheCancelledOrder() throws Exception {
+    when(cancelOrder.cancelOrder(ORDER.id())).thenReturn(ORDER.cancel());
+
+    mockMvc
+        .perform(post("/api/orders/{orderId}/cancel", ORDER.id()))
+        .andExpect(status().isOk())
+        .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
+        .andExpect(jsonPath("$.orderId").value(ORDER.id().toString()))
+        .andExpect(jsonPath("$.status").value("CANCELLED"))
+        .andExpect(jsonPath("$.items.length()").value(2))
+        .andExpect(jsonPath("$.items[0].productId").value("BOOK"))
+        .andExpect(jsonPath("$.totalAmount").value(28.60));
+  }
+
+  @Test
+  void cancellingAnUnknownOrderReturns404AsAProblemDetail() throws Exception {
+    UUID unknown = UUID.randomUUID();
+    when(cancelOrder.cancelOrder(unknown)).thenThrow(new OrderNotFoundException(unknown));
+
+    mockMvc
+        .perform(post("/api/orders/{orderId}/cancel", unknown))
+        .andExpect(status().isNotFound())
+        .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_PROBLEM_JSON))
+        .andExpect(jsonPath("$.status").value(404))
+        .andExpect(jsonPath("$.title").value("Order not found"))
+        .andExpect(jsonPath("$.detail").value("no order has the identifier " + unknown));
+  }
+
+  @Test
+  void cancellingAnOrderThatIsNotCreatedReturns409AsAProblemDetail() throws Exception {
+    when(cancelOrder.cancelOrder(ORDER.id()))
+        .thenThrow(
+            new OrderNotCancellableException(
+                ORDER.id(), OrderStatus.CANCELLED, new IllegalStateException("refused")));
+
+    mockMvc
+        .perform(post("/api/orders/{orderId}/cancel", ORDER.id()))
+        .andExpect(status().isConflict())
+        .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_PROBLEM_JSON))
+        .andExpect(jsonPath("$.status").value(409))
+        .andExpect(jsonPath("$.title").value("Order cannot be cancelled"))
+        .andExpect(
+            jsonPath("$.detail")
+                .value("the order " + ORDER.id() + " is CANCELLED and cannot be cancelled"))
+        .andExpect(jsonPath("$.instance").value("/api/orders/" + ORDER.id() + "/cancel"));
+  }
+
+  @Test
+  void cancellingWithAMalformedIdentifierReturns400AsAProblemDetail() throws Exception {
+    mockMvc
+        .perform(post("/api/orders/{orderId}/cancel", "not-a-uuid"))
+        .andExpect(status().isBadRequest())
+        .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_PROBLEM_JSON))
+        .andExpect(jsonPath("$.status").value(400));
+
+    verifyNoInteractions(cancelOrder);
   }
 }
