@@ -6,9 +6,11 @@ import io.github.rodolgiaco.oms.order.application.OrderNotFoundException;
 import io.github.rodolgiaco.oms.order.application.port.in.CancelOrderUseCase;
 import io.github.rodolgiaco.oms.order.application.port.in.CreateOrderUseCase;
 import io.github.rodolgiaco.oms.order.application.port.in.GetOrderUseCase;
+import io.github.rodolgiaco.oms.order.application.port.in.ListOrdersUseCase;
 import io.github.rodolgiaco.oms.order.domain.Order;
 import jakarta.validation.Valid;
 import java.net.URI;
+import java.util.List;
 import java.util.UUID;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -35,6 +37,8 @@ public class OrderController {
 
   private final GetOrderUseCase getOrder;
 
+  private final ListOrdersUseCase listOrders;
+
   private final CancelOrderUseCase cancelOrder;
 
   /**
@@ -42,12 +46,17 @@ public class OrderController {
    *
    * @param createOrder the use case that creates orders
    * @param getOrder the use case that retrieves orders
+   * @param listOrders the use case that lists every order
    * @param cancelOrder the use case that cancels orders
    */
   public OrderController(
-      CreateOrderUseCase createOrder, GetOrderUseCase getOrder, CancelOrderUseCase cancelOrder) {
+      CreateOrderUseCase createOrder,
+      GetOrderUseCase getOrder,
+      ListOrdersUseCase listOrders,
+      CancelOrderUseCase cancelOrder) {
     this.createOrder = createOrder;
     this.getOrder = getOrder;
+    this.listOrders = listOrders;
     this.cancelOrder = cancelOrder;
   }
 
@@ -79,6 +88,16 @@ public class OrderController {
   @GetMapping("/{orderId}")
   public OrderResponse get(@PathVariable UUID orderId) {
     return OrderApiMapper.toResponse(getOrder.getOrder(orderId));
+  }
+
+  /**
+   * Returns every stored order, each in the shape that {@link #get(UUID)} returns.
+   *
+   * @return every order, in no specified order, or an empty list when none is stored
+   */
+  @GetMapping
+  public List<OrderResponse> list() {
+    return listOrders.listOrders().stream().map(OrderApiMapper::toResponse).toList();
   }
 
   /**

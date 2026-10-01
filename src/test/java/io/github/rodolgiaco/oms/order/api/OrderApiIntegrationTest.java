@@ -15,13 +15,16 @@ import io.github.rodolgiaco.oms.order.domain.OrderItem;
 import io.github.rodolgiaco.oms.order.domain.OrderStatus;
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
@@ -37,6 +40,8 @@ class OrderApiIntegrationTest {
   @Autowired private WebApplicationContext context;
 
   @Autowired private OrderRepository repository;
+
+  @Autowired private JdbcTemplate jdbc;
 
   private MockMvc mockMvc;
 
@@ -152,6 +157,47 @@ class OrderApiIntegrationTest {
         .perform(get("/api/orders/{orderId}", orderId))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.status").value("CANCELLED"));
+  }
+
+  @Test
+  void listingTheOrdersReturnsEveryStoredOrderInTheShapeOfASingleOrder() throws Exception {
+    UUID created = createOrder();
+    UUID cancelled = createOrder();
+    mockMvc.perform(post("/api/orders/{orderId}/cancel", cancelled)).andExpect(status().isOk());
+
+    String listed =
+        mockMvc
+            .perform(get("/api/orders"))
+            .andExpect(status().isOk())
+            .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
+            .andReturn()
+            .getResponse()
+            .getContentAsString();
+
+    // Other tests share the database, so the listed identifiers are compared
+    // with the table rather than with the orders created here.
+    List<String> listedIds = JsonPath.read(listed, "$[*].orderId");
+    assertEquals(listedIds.size(), Set.copyOf(listedIds).size());
+    assertEquals(
+        jdbc.queryForList("SELECT id FROM orders", UUID.class).stream()
+            .map(UUID::toString)
+            .collect(Collectors.toSet()),
+        Set.copyOf(listedIds));
+
+    for (UUID orderId : List.of(created, cancelled)) {
+      String single =
+          mockMvc
+              .perform(get("/api/orders/{orderId}", orderId))
+              .andExpect(status().isOk())
+              .andReturn()
+              .getResponse()
+              .getContentAsString();
+      Object expected = JsonPath.read(single, "$");
+      List<Object> matching = JsonPath.read(listed, "$[?(@.orderId == '" + orderId + "')]");
+      assertEquals(List.of(expected), matching);
+    }
+    List<String> statuses = JsonPath.read(listed, "$[?(@.orderId == '" + cancelled + "')].status");
+    assertEquals(List.of("CANCELLED"), statuses);
   }
 
   @Test

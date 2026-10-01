@@ -2,6 +2,7 @@ package io.github.rodolgiaco.oms.order.infrastructure.persistence;
 
 import io.github.rodolgiaco.oms.order.application.port.out.OrderRepository;
 import io.github.rodolgiaco.oms.order.domain.Order;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import org.springframework.stereotype.Component;
@@ -36,5 +37,11 @@ class JpaOrderRepositoryAdapter implements OrderRepository {
   @Transactional(readOnly = true)
   public Optional<Order> findById(UUID id) {
     return orders.findById(id).map(OrderEntityMapper::toDomain);
+  }
+
+  @Override
+  @Transactional(readOnly = true)
+  public List<Order> findAll() {
+    return orders.findAll().stream().map(OrderEntityMapper::toDomain).toList();
   }
 }

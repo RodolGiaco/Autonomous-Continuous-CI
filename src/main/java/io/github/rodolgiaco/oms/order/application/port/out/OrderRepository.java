@@ -1,6 +1,7 @@
 package io.github.rodolgiaco.oms.order.application.port.out;
 
 import io.github.rodolgiaco.oms.order.domain.Order;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -22,4 +23,11 @@ public interface OrderRepository {
    * @return the order, or empty when no order has that identifier
    */
   Optional<Order> findById(UUID id);
+
+  /**
+   * Loads every stored order together with all its items.
+   *
+   * @return every stored order once, in no specified order, or an empty list when none is stored
+   */
+  List<Order> findAll();
 }

@@ -57,11 +57,14 @@ Tests hold the boundaries in place. `OrderLayerDependencyTest` and `CatalogLayer
 | `GET` | `/api/products/sku/{sku}` | — | `200` with the product that has the SKU, compared exactly | `404` unknown SKU |
 | `GET` | `/api/products?page=&size=` | — | `200` with one page, ordered by SKU | `400` when `page` is below 0 or `size` is outside 1–100 |
 | `POST` | `/api/orders` | `items`, each with `productId`, `quantity`, `unitPrice` | `201` with the order and a `Location` header | `400` invalid body |
+| `GET` | `/api/orders` | — | `200` with an array of every order | — |
 | `GET` | `/api/orders/{orderId}` | — | `200` with the order | `400` malformed identifier, `404` unknown identifier |
 | `POST` | `/api/orders/{orderId}/cancel` | — | `200` with the order in `CANCELLED` | `400` malformed identifier, `404` unknown identifier, `409` order not in `CREATED` |
 | `GET` | `/actuator/health` | — | `200` with `status` `UP` | — |
 
 `page` defaults to 0 and `size` to 20.
+
+`GET /api/orders` returns every stored order, whatever its status, each in the shape that `GET /api/orders/{orderId}` returns. The array is not paginated, sorted or filtered, so the orders come in no specified order, and it is empty when no order is stored.
 
 An order starts in `CREATED` and can be cancelled only from there. `CANCELLED` is final: cancelling the order again is refused with `409`, and the order stays as it is.
 
@@ -160,6 +163,26 @@ Content-Type: application/json
 ```
 
 `totalAmount` is the sum of `quantity × unitPrice` over the items.
+
+### List orders
+
+```bash
+curl http://localhost:8080/api/orders
+```
+
+```json
+[
+  {
+    "orderId": "fa8c6770-545f-4a6f-8f64-d14475fad4db",
+    "status": "CREATED",
+    "items": [
+      {"productId": "BOOK-001", "quantity": 2, "unitPrice": 54.90},
+      {"productId": "PEN-002", "quantity": 3, "unitPrice": 1.20}
+    ],
+    "totalAmount": 113.40
+  }
+]
+```
 
 ### Cancel an order
 

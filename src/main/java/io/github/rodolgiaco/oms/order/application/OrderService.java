@@ -4,6 +4,7 @@ import io.github.rodolgiaco.oms.order.application.port.in.CancelOrderUseCase;
 import io.github.rodolgiaco.oms.order.application.port.in.CreateOrderCommand;
 import io.github.rodolgiaco.oms.order.application.port.in.CreateOrderUseCase;
 import io.github.rodolgiaco.oms.order.application.port.in.GetOrderUseCase;
+import io.github.rodolgiaco.oms.order.application.port.in.ListOrdersUseCase;
 import io.github.rodolgiaco.oms.order.application.port.out.OrderRepository;
 import io.github.rodolgiaco.oms.order.domain.Order;
 import io.github.rodolgiaco.oms.order.domain.OrderItem;
@@ -19,7 +20,8 @@ import org.springframework.stereotype.Service;
  * injects through the constructor. The controller reaches it only through the use case interfaces.
  */
 @Service
-public class OrderService implements CreateOrderUseCase, GetOrderUseCase, CancelOrderUseCase {
+public class OrderService
+    implements CreateOrderUseCase, GetOrderUseCase, ListOrdersUseCase, CancelOrderUseCase {
 
   private final OrderRepository orders;
 
@@ -47,6 +49,11 @@ public class OrderService implements CreateOrderUseCase, GetOrderUseCase, Cancel
   @Override
   public Order getOrder(UUID orderId) {
     return orders.findById(orderId).orElseThrow(() -> new OrderNotFoundException(orderId));
+  }
+
+  @Override
+  public List<Order> listOrders() {
+    return orders.findAll();
   }
 
   @Override
