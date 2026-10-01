@@ -148,3 +148,14 @@ Written alongside the code:
 | Layer rules | Reflection tests over fields, constructors and annotations |
 
 Assertions use JUnit's `Assertions`. `./mvnw verify` runs everything and needs Docker. `./mvnw spotless:apply` formats the code, and CI runs `mvn -B -q spotless:check`.
+
+### Specs
+
+Every issue is worked as one OpenSpec change. The issue body stays the authority: the change records how it was read, and `openspec/specs` holds the behaviour that is current.
+
+- Name the change after the branch, with `/` replaced by `-`: `issue/48-cancel-an-order` becomes `issue-48-cancel-an-order`.
+- Create it from the issue body before any code, with the `openspec-propose` skill. The issue's out of scope list goes into the proposal.
+- Tick each task in `tasks.md` as it is done.
+- A delta that creates a capability carries a `## Purpose` of at least 50 characters: archive copies it into the new spec, and strict validation rejects a placeholder or a shorter one.
+- A change that only refactors or touches documentation sets `skip_specs: true` in its `.openspec.yaml`.
+- Before the final commit, archive the change with `openspec archive <name> --yes` and run `bash scripts/spec-check.sh` until it passes.

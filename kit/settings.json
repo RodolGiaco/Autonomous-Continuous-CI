@@ -20,7 +20,9 @@
       "Edit(/src/**)",
       "Write(/src/**)",
       "Edit(/docs/**)",
-      "Write(/docs/**)"
+      "Write(/docs/**)",
+      "Edit(/openspec/**)",
+      "Write(/openspec/**)"
     ]
   },
   "hooks": {
