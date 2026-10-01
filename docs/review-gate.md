@@ -70,6 +70,8 @@ The `Enforce the verdicts` step judges each reviewer in the shell. A reviewer pa
 
 Every failure mode lands on the refusing side: a review that did not run never passes. On a branch with no issue, the step prints `PASS  acceptance audit: no issue on this branch, not applicable`, and only the code review decides.
 
+One line reports without refusing: `WARN  code review: changed files not reported as reviewed: …` lists the changed files the code reviewer did not name, images left out. It measures how much of each diff the review covers before that becomes a check.
+
 ## What the reviewers look for
 
 **The code reviewer** reviews only the files the diff touches, without knowing why any decision was made. A finding is blocking when:

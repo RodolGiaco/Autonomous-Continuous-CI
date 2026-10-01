@@ -170,6 +170,18 @@ jobs:
               return 1
             fi
 
+            # Coverage, reported and not enforced yet: changed files the code
+            # reviewer did not name. Binary assets are left out, and the
+            # acceptance auditor is exempt because it reads per criterion.
+            if [ "$label" = "code review" ]; then
+              missing=$(printf '%s' "$payload" | jq -r '.files_reviewed[] | sub("^\\.?/"; "")' | sort -u \
+                        | comm -13 - changed-files.txt \
+                        | { grep -vE '\.(png|gif|jpe?g|svg|ico)$' || true; } | tr '\n' ' ')
+              if [ -n "${missing// /}" ]; then
+                echo "WARN  $label: changed files not reported as reviewed: $missing"
+              fi
+            fi
+
             # Consistency: the verdict has to agree with the findings.
             if [ "$verdict" = "pass" ] && [ "$blocking" -gt 0 ]; then
               echo "FAIL  $label: verdict pass with $blocking blocking finding(s)"
