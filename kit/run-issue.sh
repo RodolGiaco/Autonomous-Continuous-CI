@@ -218,6 +218,11 @@ if [ "$DENIALS" != "0" ]; then
   die "the session was blocked; the branch is left in place for inspection"
 fi
 
+# A session that ends with files it did not commit leaves work the push would
+# drop, and the next run would stop on a dirty tree without saying why.
+[ -z "$(git status --porcelain)" ] \
+  || die "the session left uncommitted changes; the branch is left in place for inspection"
+
 COMMITS=$(git rev-list --count "${MAIN_REF}..HEAD")
 [ "$COMMITS" -gt 0 ] || die "the session produced no commit; nothing to push"
 echo "commits on the branch: $COMMITS"
@@ -226,6 +231,17 @@ echo "commits on the branch: $COMMITS"
 if [ "$RESUMED" = yes ]; then
   echo "commits from this session: $(git rev-list --count "${START_COMMIT}..HEAD")"
 fi
+
+# ------------------------------------------------------------- local checks --
+# The same commands CI runs. A red result here stops the run before the push
+# pays for two review sessions on code that cannot merge.
+step "Local checks"
+for var in KIT_FORMAT_CHECK_CMD KIT_TEST_CMD; do
+  cmd="${!var:-}"
+  [ -n "$cmd" ] || continue
+  echo "running: $cmd"
+  eval "$cmd" || die "$var failed locally; the branch is left in place, fix it and run this issue again"
+done
 
 # --------------------------------------------------------------------- push --
 # The runner pushes, not the model: this step has to be auditable in the log.
