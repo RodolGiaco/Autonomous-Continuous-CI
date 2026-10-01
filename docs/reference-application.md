@@ -247,7 +247,7 @@ The [README](../README.md#run-the-reference-application) has the steps to run th
 
 ## Tests
 
-`./mvnw verify` runs 194 tests. The ones that need a database start PostgreSQL 17 in a container through Testcontainers, so Docker is the only requirement.
+`./mvnw verify` runs the whole suite. The tests that need a database start PostgreSQL 17 in a container through Testcontainers, so Docker is the only requirement.
 
 | Layer | Tests |
 |---|---|

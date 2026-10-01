@@ -337,7 +337,7 @@ The kit verifies itself with scripts anyone can run. In a fresh clone, run `bash
 | `bash kit/test-guards.sh` | 63 cases in throwaway repositories: every push, commit and merge form the guards must allow or refuse, on a branch and on a detached HEAD, and the SessionStart hook. No Claude session is started. |
 | `bash kit/doctor.sh` | Tools and authentication, installed copies against `kit/`, reviewers, `kit.vars` keys and quoting, permission paths, executable hooks, ignored session state, and an active ruleset on GitHub. |
 | `bash kit/github/apply-protection.sh` | Applies the ruleset and reads it back: active, no bypass actors, the three rules present, each check bound to its app, auto-merge enabled. Needs admin rights on the repository. |
-| `./mvnw verify` | The reference application: 194 tests, including integration tests against PostgreSQL through Testcontainers. |
+| `./mvnw verify` | The reference application's whole suite, including integration tests against PostgreSQL through Testcontainers. |
 
 ## Technical decisions
 

@@ -101,6 +101,10 @@ the kit and the workflows included, is outside its reach, and `Edit(/kit/**)`,
 into a refusal. `doctor.sh` fails when an allowed path does not exist, so a
 repository without `docs/` or `openspec/` creates it or removes those rules.
 
+`Skill` is allowed because the project's `CLAUDE.md` may tell a session to use
+a skill, and a headless run refuses every tool it was not granted. Skills live
+in `.claude/skills/`, committed and reviewed like `CLAUDE.md` itself.
+
 Deliberately absent: rules against `git push --force` and against
 `gh pr merge` without `--auto`. Written as deny rules they would be theatre:
 the first is evaded by moving the flag, and the second cannot be expressed at
